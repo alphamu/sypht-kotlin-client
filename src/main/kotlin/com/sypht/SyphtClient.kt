@@ -86,11 +86,40 @@ open class SyphtClient(credentialProvider: ICredentialProvider = EnvironmentVari
         return performUpload(builder)
     }
 
+    /**
+     * Pass a file to Sypht for detection.
+     *
+     * @param fileName the file name
+     * @param bytes byte representation of pdf, jpeg, gif or png format. Files may be up to
+     *                    20MB in size and pdf files may contain up to 16 individual pages.
+     * @param fieldSetOptions pass in custom upload options here.
+     * @param requestTimeout pass in custom http request timeout in seconds, default is 30seconds.
+     * @return a fileId as a String.
+     * @throws IOException in the event the upload went wrong.
+     * @throws IllegalStateException when http response code is outside 200...299 or the response body is null.
+     */
+    @Throws(IOException::class, IllegalStateException::class)
+    fun upload(fileName: String, bytes: ByteArray, fieldSetOptions: Array<String>? = null): String {
+        val builder = buildMultipartBodyUploadWithByteArray(fileName, bytes)
+        fieldSetOptions?.let {
+            builder.addFormDataPart("fieldSets", JSONArray(fieldSetOptions).toString())
+        }
+        return performUpload(builder)
+    }
+
     private fun buildMultipartBodyUploadWithFile(file: File): MultipartBody.Builder {
         val formBody = MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("fileToUpload", file.name,
                         RequestBody.create(MediaType.parse("application/x-www-form-urlencoded"), file))
+        return formBody
+    }
+
+    private fun buildMultipartBodyUploadWithByteArray(fileName: String, bytes: ByteArray): MultipartBody.Builder {
+        val formBody = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("fileToUpload", fileName,
+                        RequestBody.create(MediaType.parse("application/x-www-form-urlencoded"), bytes))
         return formBody
     }
 
